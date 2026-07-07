@@ -1,0 +1,27 @@
+flowchart LR
+    developer[Developer]
+    github[GitHub Repository]
+    jenkins[Jenkins Pipeline]
+    sonar[SonarQube Quality Scan]
+    docker[Docker Build]
+    registry[Docker Hub or AWS ECR]
+    eks[Kubernetes or Amazon EKS]
+    ingress[Ingress Controller]
+    frontend[Frontend Service<br/>nginx]
+    backend[Backend Service<br/>FastAPI]
+    postgres[(PostgreSQL)]
+    redis[(Redis)]
+
+    developer --> github
+    github --> jenkins
+    jenkins --> sonar
+    jenkins --> docker
+    docker --> registry
+    jenkins --> eks
+    registry --> eks
+    eks --> ingress
+    ingress --> frontend
+    ingress --> backend
+    frontend --> backend
+    backend --> postgres
+    backend --> redis

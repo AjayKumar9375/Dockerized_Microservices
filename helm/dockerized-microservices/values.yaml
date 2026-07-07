@@ -1,0 +1,96 @@
+nameOverride: ""
+namespaceOverride: ""
+
+app:
+  name: "Dockerized Microservices API"
+  environment: "helm"
+  allowedOrigins: "http://microservices.local,http://localhost:8080,http://localhost:3000"
+
+backend:
+  name: backend
+  replicaCount: 2
+  image:
+    repository: dockerized-microservices-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    name: backend
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+frontend:
+  name: frontend
+  replicaCount: 2
+  image:
+    repository: dockerized-microservices-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    name: frontend
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+database:
+  name: app_db
+  user: app_user
+  password: change_me
+
+postgres:
+  name: postgres
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+  service:
+    name: postgres
+    port: 5432
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+redis:
+  name: redis
+  image:
+    repository: redis
+    tag: 7-alpine
+    pullPolicy: IfNotPresent
+  service:
+    name: redis
+    port: 6379
+  persistence:
+    enabled: true
+    size: 512Mi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: microservices.local
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+  tls: []

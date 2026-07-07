@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dockerized-microservices
+description: A portfolio Helm chart for a FastAPI, nginx, PostgreSQL, and Redis microservices stack.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

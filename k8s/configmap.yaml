@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: dockerized-microservices
+  labels:
+    app.kubernetes.io/name: dockerized-microservices
+data:
+  APP_NAME: "Dockerized Microservices API"
+  ENVIRONMENT: "kubernetes"
+  REDIS_URL: "redis://redis:6379/0"
+  ALLOWED_ORIGINS: "http://microservices.local,http://localhost:8080,http://localhost:3000"

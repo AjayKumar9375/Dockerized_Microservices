@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dockerized Microservices Deployment</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">DevOps Portfolio Project</p>
+          <h1>Dockerized Microservices Deployment</h1>
+          <p class="subtitle">
+            A FastAPI, PostgreSQL, Redis, and nginx frontend stack running with
+            Docker Compose, Kubernetes, and Helm.
+          </p>
+        </div>
+        <div class="status-panel">
+          <span id="statusDot" class="dot dot-waiting"></span>
+          <div>
+            <p class="status-label">Stack health</p>
+            <p id="healthStatus" class="status-value">Checking...</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Backend</h2>
+          <p id="apiInfo">Loading API info...</p>
+          <button id="refreshHealth" type="button">Refresh health</button>
+        </article>
+
+        <article class="card">
+          <h2>Database Tasks</h2>
+          <form id="taskForm">
+            <input
+              id="taskTitle"
+              name="title"
+              type="text"
+              minlength="2"
+              maxlength="120"
+              placeholder="Add a deployment task"
+              required
+            />
+            <button type="submit">Add</button>
+          </form>
+          <ul id="taskList" class="task-list"></ul>
+        </article>
+
+        <article class="card">
+          <h2>Redis Cache</h2>
+          <p id="cacheInfo">Click the button to increment a Redis-backed counter.</p>
+          <button id="cacheButton" type="button">Increment cache counter</button>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

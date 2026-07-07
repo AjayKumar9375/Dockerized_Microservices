@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: {{ include "dockerized-microservices.namespace" . }}
+  labels:
+    {{- include "dockerized-microservices.labels" . | nindent 4 }}
+data:
+  APP_NAME: {{ .Values.app.name | quote }}
+  ENVIRONMENT: {{ .Values.app.environment | quote }}
+  REDIS_URL: {{ printf "redis://%s:%v/0" .Values.redis.service.name .Values.redis.service.port | quote }}
+  ALLOWED_ORIGINS: {{ .Values.app.allowedOrigins | quote }}

@@ -1,0 +1,17 @@
+Dockerized Microservices Deployment has been installed.
+
+Check pods:
+  kubectl -n {{ include "dockerized-microservices.namespace" . }} get pods
+
+Port-forward the frontend:
+  kubectl -n {{ include "dockerized-microservices.namespace" . }} port-forward svc/{{ .Values.frontend.service.name }} 8080:{{ .Values.frontend.service.port }}
+
+Open:
+  http://localhost:8080
+
+Health check:
+  kubectl -n {{ include "dockerized-microservices.namespace" . }} port-forward svc/{{ .Values.backend.service.name }} 8000:{{ .Values.backend.service.port }}
+  curl http://localhost:8000/health
+
+Ingress host:
+  http://{{ .Values.ingress.host }}
