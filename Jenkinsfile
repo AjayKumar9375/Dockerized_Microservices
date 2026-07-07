@@ -36,7 +36,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'docker compose config --quiet'
+                sh 'docker compose config'
                 sh 'docker compose build'
             }
         }
