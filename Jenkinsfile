@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'docker-agent'
+        label 'my-docker-agent'
     }
 
     options {
