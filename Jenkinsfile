@@ -18,10 +18,10 @@ pipeline {
         APP_NAME = 'dockerized-microservices'
         BACKEND_IMAGE = 'dockerized-microservices-backend'
         FRONTEND_IMAGE = 'dockerized-microservices-frontend'
-        DOCKERHUB_NAMESPACE = 'replace-with-your-dockerhub-username'
+        DOCKERHUB_NAMESPACE = 'ajaykumar9375'
         AWS_REGION = 'us-east-1'
-        AWS_ACCOUNT_ID = 'replace-with-your-aws-account-id'
-        EKS_CLUSTER_NAME = 'replace-with-your-eks-cluster-name'
+        AWS_ACCOUNT_ID = '141145000733'
+        EKS_CLUSTER_NAME = 'confused-hiphop-crab'
         K8S_NAMESPACE = 'dockerized-microservices'
     }
 
