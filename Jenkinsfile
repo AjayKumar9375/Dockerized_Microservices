@@ -37,7 +37,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'docker compose config'
-                sh 'docker compose build'
+                // sh 'docker compose build'
             }
         }
 
