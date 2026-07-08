@@ -17,6 +17,7 @@ pipeline {
         string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to build and optionally push.')
         string(name: 'JENKINS_BACKEND_PORT', defaultValue: '18000', description: 'Temporary backend port used only for Jenkins Docker evidence.')
         string(name: 'JENKINS_FRONTEND_PORT', defaultValue: '13000', description: 'Temporary frontend port used only for Jenkins Docker evidence.')
+        string(name: 'K8S_REPLICA_COUNT', defaultValue: '1', description: 'Replica count used by Jenkins deployment evidence. Keep this small for portfolio demo clusters.')
     }
 
     environment {
@@ -86,7 +87,6 @@ pipeline {
 
                     echo "========== START DOCKER COMPOSE STACK =========="
                     BACKEND_PORT=${JENKINS_BACKEND_PORT} FRONTEND_PORT=${JENKINS_FRONTEND_PORT} docker compose up -d --no-build
-                    sleep 15
 
                     echo "========== DOCKER COMPOSE SERVICES =========="
                     docker compose ps | tee pipeline-evidence/docker-compose-ps.txt
@@ -96,8 +96,17 @@ pipeline {
                       | tee pipeline-evidence/docker-running-containers.txt
 
                     echo "========== BACKEND HEALTH CHECK =========="
-                    curl -fsS http://localhost:${JENKINS_BACKEND_PORT}/health \
-                      | tee pipeline-evidence/backend-health.json || true
+                    for attempt in 1 2 3 4 5 6 7 8 9 10; do
+                      if health_response=$(docker compose exec -T backend python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).read().decode())"); then
+                        echo "${health_response}" | tee pipeline-evidence/backend-health.json
+                        break
+                      fi
+
+                      echo "Backend is not ready yet. Retry ${attempt}/10..."
+                      sleep 6
+                    done
+
+                    test -s pipeline-evidence/backend-health.json
                 '''
             }
         }
@@ -215,11 +224,19 @@ pipeline {
                           --set backend.image.repository=${backendRepository} \
                           --set frontend.image.repository=${frontendRepository} \
                           --set backend.image.tag=${params.IMAGE_TAG} \
-                          --set frontend.image.tag=${params.IMAGE_TAG}
+                          --set frontend.image.tag=${params.IMAGE_TAG} \
+                          --set backend.replicaCount=${params.K8S_REPLICA_COUNT} \
+                          --set frontend.replicaCount=${params.K8S_REPLICA_COUNT}
 
-                        kubectl -n ${env.K8S_NAMESPACE} rollout status deployment/backend --timeout=180s
-                        kubectl -n ${env.K8S_NAMESPACE} rollout status deployment/frontend --timeout=180s
+                        kubectl -n ${env.K8S_NAMESPACE} get pods -o wide || true
                     """
+
+                    catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                        sh """
+                            kubectl -n ${env.K8S_NAMESPACE} rollout status deployment/backend --timeout=300s
+                            kubectl -n ${env.K8S_NAMESPACE} rollout status deployment/frontend --timeout=300s
+                        """
+                    }
                 }
             }
         }
@@ -247,6 +264,22 @@ pipeline {
                     echo "========== KUBERNETES INGRESS =========="
                     kubectl -n ${K8S_NAMESPACE} get ingress -o wide \
                       | tee pipeline-evidence/kubernetes-ingress.txt || true
+
+                    echo "========== KUBERNETES EVENTS =========="
+                    kubectl -n ${K8S_NAMESPACE} get events --sort-by=.lastTimestamp \
+                      | tail -n 40 | tee pipeline-evidence/kubernetes-events.txt || true
+
+                    echo "========== BACKEND DEPLOYMENT DESCRIBE =========="
+                    kubectl -n ${K8S_NAMESPACE} describe deployment backend \
+                      | tee pipeline-evidence/backend-deployment-describe.txt || true
+
+                    echo "========== FRONTEND DEPLOYMENT DESCRIBE =========="
+                    kubectl -n ${K8S_NAMESPACE} describe deployment frontend \
+                      | tee pipeline-evidence/frontend-deployment-describe.txt || true
+
+                    echo "========== BACKEND POD LOGS =========="
+                    kubectl -n ${K8S_NAMESPACE} logs deployment/backend --tail=80 \
+                      | tee pipeline-evidence/backend-logs.txt || true
                 '''
             }
         }

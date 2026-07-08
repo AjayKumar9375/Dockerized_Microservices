@@ -65,6 +65,8 @@ DEPLOY_TO_K8S=true
 
 The Jenkinsfile creates `pipeline-evidence/` files and archives them as build artifacts. You can screenshot the Jenkins stage view, the console output from `Docker Evidence`, and the console output from `Kubernetes Evidence`.
 
+If Jenkins runs inside a Docker agent, the pipeline checks backend health from inside the Compose network instead of using `localhost`. This avoids screenshots failing because published Docker ports belong to the Docker host rather than the Jenkins container.
+
 ## 3. Kubernetes Running Screenshot
 
 To capture Kubernetes from Jenkins, run the pipeline with:
@@ -78,6 +80,14 @@ If you are deploying to EKS and Jenkins needs to configure kubeconfig, also set:
 ```text
 UPDATE_EKS_KUBECONFIG=true
 ```
+
+For a small demo cluster, keep:
+
+```text
+K8S_REPLICA_COUNT=1
+```
+
+This keeps the screenshot run lightweight and avoids rollouts getting stuck because the cluster cannot schedule multiple replicas.
 
 Screenshot the `Kubernetes Evidence` stage console output. It prints:
 
@@ -93,6 +103,9 @@ The same output is archived in:
 pipeline-evidence/kubernetes-pods.txt
 pipeline-evidence/kubernetes-services.txt
 pipeline-evidence/kubernetes-ingress.txt
+pipeline-evidence/kubernetes-events.txt
+pipeline-evidence/backend-deployment-describe.txt
+pipeline-evidence/frontend-deployment-describe.txt
 ```
 
 Save as:
