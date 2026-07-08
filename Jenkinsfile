@@ -52,9 +52,11 @@ pipeline {
             steps {
                 script {
                     try {
-                        withSonarQubeEnv('sonar-server') {
-                            sh 'sonar-scanner'
-                        }
+                        def scannerHome = tool 'sonar-scanner'
+
+                withSonarQubeEnv('sonar-server') {
+                    sh "${scannerHome}/bin/sonar-scanner"
+                }
                     } catch (err) {
                         echo "SonarQube is not configured on this Jenkins controller yet: ${err}"
                         echo 'Install SonarQube Scanner and configure a server named "sonarqube" to run this stage fully.'
