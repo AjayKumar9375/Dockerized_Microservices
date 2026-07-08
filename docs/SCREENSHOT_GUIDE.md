@@ -35,8 +35,12 @@ Minimum local screenshot:
    - Test
    - SonarQube Scan
    - Docker Build
+   - Docker Evidence
    - Push Images
-   - Deploy
+   - Registry Evidence
+   - Prepare Kubernetes Context
+   - Deploy to Kubernetes
+   - Kubernetes Evidence
 
 Save as:
 
@@ -59,34 +63,36 @@ PUSH_IMAGES=true
 DEPLOY_TO_K8S=true
 ```
 
+The Jenkinsfile creates `pipeline-evidence/` files and archives them as build artifacts. You can screenshot the Jenkins stage view, the console output from `Docker Evidence`, and the console output from `Kubernetes Evidence`.
+
 ## 3. Kubernetes Running Screenshot
 
-Build images:
+To capture Kubernetes from Jenkins, run the pipeline with:
 
-```bash
-docker compose build
+```text
+DEPLOY_TO_K8S=true
 ```
 
-For minikube:
+If you are deploying to EKS and Jenkins needs to configure kubeconfig, also set:
 
-```bash
-minikube start
-minikube image load dockerized-microservices-backend:latest
-minikube image load dockerized-microservices-frontend:latest
+```text
+UPDATE_EKS_KUBECONFIG=true
 ```
 
-Deploy:
-
-```bash
-kubectl apply -f k8s/
-```
-
-Capture these terminal commands:
+Screenshot the `Kubernetes Evidence` stage console output. It prints:
 
 ```bash
 kubectl -n dockerized-microservices get pods -o wide
-kubectl -n dockerized-microservices get svc
-kubectl -n dockerized-microservices get ingress
+kubectl -n dockerized-microservices get svc -o wide
+kubectl -n dockerized-microservices get ingress -o wide
+```
+
+The same output is archived in:
+
+```text
+pipeline-evidence/kubernetes-pods.txt
+pipeline-evidence/kubernetes-services.txt
+pipeline-evidence/kubernetes-ingress.txt
 ```
 
 Save as:
@@ -95,13 +101,23 @@ Save as:
 screenshots/kubernetes-running.png
 ```
 
-Clean up when finished:
+## 4. Docker Image Screenshot
+
+To capture Docker evidence from Jenkins, screenshot the `Docker Evidence` stage console output. It prints:
 
 ```bash
-kubectl delete -f k8s/
+docker images
+docker compose ps
+docker ps --filter "name=dmd-"
 ```
 
-## 4. Docker Image Screenshot
+The same output is archived in:
+
+```text
+pipeline-evidence/docker-images.txt
+pipeline-evidence/docker-compose-ps.txt
+pipeline-evidence/docker-running-containers.txt
+```
 
 ### Docker Hub
 
