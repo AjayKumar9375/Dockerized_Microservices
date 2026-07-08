@@ -52,7 +52,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        withSonarQubeEnv('sonarqube') {
+                        withSonarQubeEnv('sonar-server') {
                             sh 'sonar-scanner'
                         }
                     } catch (err) {
