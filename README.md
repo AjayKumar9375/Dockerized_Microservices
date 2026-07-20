@@ -202,6 +202,6 @@ git init
 git add .
 git commit -m "Add dockerized microservices deployment"
 git branch -M main
-git remote add origin https://github.com/<your-username>/dockerized-microservices-deployment.git
+git remote add origin https://github.com/AjayKumar9375/dockerized-microservices.git
 git push -u origin main
 ```
