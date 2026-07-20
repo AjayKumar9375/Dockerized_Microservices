@@ -45,7 +45,7 @@ async function loadHealth() {
 async function loadInfo() {
   try {
     const info = await requestJson("/api/info");
-    apiInfo.textContent = `${info.service} is running in ${info.environment} mode. ${info.message}`;
+    apiInfo.textContent = `${info.service} (${info.environment}) - ${info.message}`;
   } catch (error) {
     apiInfo.textContent = error.message;
   }
@@ -92,7 +92,7 @@ taskForm.addEventListener("submit", async (event) => {
 cacheButton.addEventListener("click", async () => {
   try {
     const data = await requestJson("/api/cache");
-    cacheInfo.textContent = `${data.message} Current hits: ${data.hits}`;
+    cacheInfo.textContent = `${data.message} Hits: ${data.hits}`;
     await loadHealth();
   } catch (error) {
     cacheInfo.textContent = error.message;

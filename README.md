@@ -1,142 +1,111 @@
 # Dockerized Microservices Deployment
 
-A beginner-friendly but portfolio-ready DevOps project that demonstrates how to build, containerize, run, and deploy a small microservices application.
+A small microservices deployment project built to practice the path from local containers to Kubernetes.
 
-The stack includes:
+The app has four services:
 
-- **Frontend:** nginx serving a simple HTML/CSS/JavaScript UI
-- **Backend:** Python FastAPI REST API
-- **Database:** PostgreSQL
-- **Cache:** Redis
-- **Local runtime:** Docker Compose
-- **Orchestration:** Kubernetes manifests
-- **Optional deployment packaging:** Helm chart
+- `frontend`: nginx serving a static UI
+- `backend`: FastAPI service with health checks
+- `postgres`: stores demo tasks
+- `redis`: stores a simple hit counter
+
+The repo also includes Docker Compose, Kubernetes manifests, a Helm chart, and a Jenkins pipeline.
 
 ## Architecture
 
-```text
-Browser
-  |
-  v
-Frontend Service (nginx static UI)
-  |  proxies /api and /health
-  v
-Backend Service (FastAPI)
-  |--------------------|
-  v                    v
-PostgreSQL         Redis
-tasks table        cache hit counter
-```
-
-The frontend serves the portfolio UI and forwards API traffic to the backend. FastAPI exposes `/health`, `/api/info`, `/api/tasks`, and `/api/cache`. PostgreSQL stores demo deployment tasks, while Redis stores a small incrementing counter to prove cache connectivity.
-
-## CI/CD Architecture
-
 ```mermaid
 flowchart LR
-    developer[Developer] --> github[GitHub Repository]
-    github --> jenkins[Jenkins Pipeline]
-    jenkins --> sonar[SonarQube Quality Scan]
-    jenkins --> docker[Docker Build]
-    docker --> registry[Docker Hub or AWS ECR]
-    jenkins --> eks[Kubernetes or Amazon EKS]
-    registry --> eks
-    eks --> ingress[Ingress Controller]
-    ingress --> frontend[Frontend Service]
-    ingress --> backend[Backend Service]
-    frontend --> backend
+    user[Browser] --> frontend[Frontend / nginx]
+    frontend --> backend[Backend / FastAPI]
     backend --> postgres[(PostgreSQL)]
     backend --> redis[(Redis)]
 ```
 
-The root `Jenkinsfile` is included for a portfolio CI/CD flow with build, test, scan, image publishing, and Kubernetes deployment stages.
+CI/CD flow:
 
-## Project Structure
+```mermaid
+flowchart LR
+    github[GitHub] --> jenkins[Jenkins]
+    jenkins --> sonar[SonarQube]
+    jenkins --> docker[Docker images]
+    docker --> registry[Docker Hub or ECR]
+    jenkins --> k8s[Kubernetes or EKS]
+```
+
+## Repository Layout
 
 ```text
 .
-|-- backend/
-|   |-- app/
-|   |   |-- config.py
-|   |   `-- main.py
-|   |-- Dockerfile
-|   `-- requirements.txt
-|-- frontend/
-|   |-- src/
-|   |   |-- app.js
-|   |   |-- index.html
-|   |   `-- styles.css
-|   |-- Dockerfile
-|   `-- nginx.conf
-|-- k8s/
-|-- helm/
-|   `-- dockerized-microservices/
-|-- docs/
-|   |-- SCREENSHOT_GUIDE.md
-|   `-- architecture.mmd
+|-- backend/                  FastAPI service
+|-- frontend/                 nginx static UI
+|-- k8s/                      plain Kubernetes manifests
+|-- helm/dockerized-microservices/
+|-- docs/                     architecture and screenshot notes
 |-- Jenkinsfile
-|-- sonar-project.properties
 |-- docker-compose.yml
-|-- .env.example
-|-- .gitignore
+|-- sonar-project.properties
 `-- README.md
 ```
 
-## Prerequisites
-
-- Docker Desktop or Docker Engine
-- Docker Compose v2
-- kubectl
-- A local Kubernetes cluster such as Docker Desktop Kubernetes, minikube, or kind
-- Helm 3, optional but recommended
-- An ingress controller, optional for testing ingress
-
-## Local Setup With Docker Compose
-
-Create your local environment file:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Build and start the full stack:
+## Run Locally
 
 ```bash
+cp .env.example .env
 docker compose up --build -d
-```
-
-Check containers:
-
-```bash
 docker compose ps
 ```
 
-Verify the backend:
+Open the UI:
+
+```text
+http://localhost:3000
+```
+
+Check the API:
 
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:8000/api/info
 ```
 
-Open the app:
-
-```text
-http://localhost:3000
-```
-
-Stop the stack:
+Stop everything:
 
 ```bash
 docker compose down
 ```
 
-Remove local volumes if you want a clean database/cache:
+Use `docker compose down -v` if you also want to remove the local database and Redis data.
 
-```bash
-docker compose down -v
-```
+## Jenkins Pipeline
 
-## Kubernetes Deployment
+The `Jenkinsfile` runs these stages:
+
+1. Checkout
+2. Validate
+3. Build Images
+4. Test
+5. SonarQube
+6. Docker Evidence
+7. Push Images
+8. Deploy to Kubernetes
+9. Kubernetes Evidence
+
+Useful parameters:
+
+| Parameter | Purpose |
+| --- | --- |
+| `IMAGE_TAG` | Tag used for image build, push, and deployment |
+| `RUN_SONAR` | Enables SonarQube analysis |
+| `PUSH_IMAGES` | Pushes images to Docker Hub or ECR |
+| `REGISTRY_TYPE` | `dockerhub` or `ecr` |
+| `REGISTRY_NAMESPACE` | Docker Hub namespace |
+| `DEPLOY_TO_K8S` | Runs Helm deployment |
+| `UPDATE_EKS_KUBECONFIG` | Updates kubeconfig for EKS |
+| `K8S_REPLICAS` | Replica count for demo deployments |
+
+The pipeline archives command output under `pipeline-evidence/`, which is useful for portfolio screenshots.
+
+## Kubernetes
 
 Build local images:
 
@@ -145,31 +114,19 @@ docker build -t dockerized-microservices-backend:latest ./backend
 docker build -t dockerized-microservices-frontend:latest ./frontend
 ```
 
-If you use minikube, load the images into the cluster:
+For minikube:
 
 ```bash
 minikube image load dockerized-microservices-backend:latest
 minikube image load dockerized-microservices-frontend:latest
 ```
 
-Apply the manifests:
+Apply manifests:
 
 ```bash
 kubectl apply -f k8s/
-```
-
-Check resources:
-
-```bash
-kubectl -n dockerized-microservices get all
 kubectl -n dockerized-microservices get pods -o wide
-```
-
-Wait for deployments:
-
-```bash
-kubectl -n dockerized-microservices rollout status deployment/backend
-kubectl -n dockerized-microservices rollout status deployment/frontend
+kubectl -n dockerized-microservices get svc
 ```
 
 Port-forward the frontend:
@@ -184,27 +141,13 @@ Open:
 http://localhost:8080
 ```
 
-If your cluster has an nginx ingress controller, add this host entry:
-
-```text
-127.0.0.1 microservices.local
-```
-
-Then open:
-
-```text
-http://microservices.local
-```
-
-Delete the Kubernetes resources:
+Clean up:
 
 ```bash
 kubectl delete -f k8s/
 ```
 
-## Helm Deployment
-
-Install or upgrade the chart:
+## Helm
 
 ```bash
 helm upgrade --install dockerized-microservices ./helm/dockerized-microservices \
@@ -212,138 +155,53 @@ helm upgrade --install dockerized-microservices ./helm/dockerized-microservices 
   --create-namespace
 ```
 
-Check the release:
-
 ```bash
 helm status dockerized-microservices -n dockerized-microservices
-kubectl -n dockerized-microservices get pods
-```
-
-Uninstall:
-
-```bash
 helm uninstall dockerized-microservices -n dockerized-microservices
 ```
 
-## Verification Commands
+## Screenshots
 
-```bash
-docker compose ps
-docker compose logs backend
-curl http://localhost:8000/health
-kubectl -n dockerized-microservices get pods
-kubectl -n dockerized-microservices describe ingress microservices-ingress
-kubectl -n dockerized-microservices logs deployment/backend
-```
+Use `docs/SCREENSHOT_GUIDE.md` for the exact screenshots to capture:
 
-## Sample Screenshots
+- Jenkins pipeline stages
+- Docker images and running containers
+- Kubernetes pods and services
+- Docker Hub or ECR image tags
+- App running in the browser
 
-Add your own screenshots after running the project. A full capture guide is available in `docs/SCREENSHOT_GUIDE.md`.
+## Environment
 
-1. **Docker containers running**
-   - Command: `docker compose ps`
-   - Suggested file: `screenshots/docker-compose-running.png`
+The backend reads configuration from environment variables:
 
-2. **Kubernetes pods running**
-   - Command: `kubectl -n dockerized-microservices get pods`
-   - Suggested file: `screenshots/kubernetes-pods-running.png`
-
-3. **App running in browser**
-   - URL: `http://localhost:3000`, `http://localhost:8080`, or `http://microservices.local`
-   - Suggested file: `screenshots/app-browser.png`
-
-4. **Jenkins pipeline stages**
-   - Source: root `Jenkinsfile`
-   - Suggested file: `screenshots/jenkins-pipeline-stages.png`
-
-5. **Docker Hub or AWS ECR image tags**
-   - Suggested files: `screenshots/dockerhub-images.png` or `screenshots/ecr-images.png`
-
-6. **GitHub repository and README**
-   - Suggested file: `screenshots/github-repository.png`
-
-## Environment Variables
-
-The backend reads environment variables through `backend/app/config.py`.
-
-| Variable | Purpose | Local default |
-| --- | --- | --- |
-| `APP_NAME` | Display name for the API | `Dockerized Microservices API` |
-| `ENVIRONMENT` | Runtime environment label | `local` |
-| `DATABASE_URL` | PostgreSQL connection URL | Set by Docker Compose/Kubernetes |
-| `REDIS_URL` | Redis connection URL | `redis://redis:6379/0` |
-| `ALLOWED_ORIGINS` | Comma-separated CORS origins | `http://localhost:3000,http://localhost:8000` |
-
-For production, use a real secret manager instead of storing database passwords in plain YAML or Helm values.
+| Variable | Description |
+| --- | --- |
+| `APP_NAME` | API name shown in responses |
+| `ENVIRONMENT` | Runtime label such as `local`, `kubernetes`, or `helm` |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection string |
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins |
 
 ## Troubleshooting
 
-### Port already in use
+If ports are busy, change `BACKEND_PORT` or `FRONTEND_PORT` in `.env`.
 
-Change `BACKEND_PORT` or `FRONTEND_PORT` in `.env`, then restart:
-
-```bash
-docker compose up -d
-```
-
-### Backend health is degraded
-
-Check database and Redis logs:
+If Kubernetes pods stay pending:
 
 ```bash
-docker compose logs postgres
-docker compose logs redis
-docker compose logs backend
-```
-
-For Kubernetes:
-
-```bash
-kubectl -n dockerized-microservices logs deployment/backend
 kubectl -n dockerized-microservices describe pod -l app=backend
+kubectl -n dockerized-microservices get events --sort-by=.lastTimestamp
 ```
 
-### Kubernetes image pull errors
+If images cannot be pulled, confirm the image names and tags in the Helm values or Kubernetes manifests.
 
-For local clusters, build the images inside or load them into the cluster. With minikube:
-
-```bash
-minikube image load dockerized-microservices-backend:latest
-minikube image load dockerized-microservices-frontend:latest
-```
-
-The manifests use `imagePullPolicy: IfNotPresent` so local images can be used.
-
-### Ingress does not respond
-
-Confirm you have an ingress controller installed:
-
-```bash
-kubectl get pods -A | grep ingress
-```
-
-You can always use port-forwarding while debugging:
-
-```bash
-kubectl -n dockerized-microservices port-forward svc/frontend 8080:80
-```
-
-## Push To GitHub
+## Push to GitHub
 
 ```bash
 git init
 git add .
-git commit -m "Add Dockerized Microservices Deployment portfolio project"
+git commit -m "Add dockerized microservices deployment"
 git branch -M main
 git remote add origin https://github.com/<your-username>/dockerized-microservices-deployment.git
 git push -u origin main
 ```
-
-## Portfolio Talking Points
-
-- Multi-container local development with Docker Compose
-- Health checks and dependency verification
-- Environment-variable based configuration
-- Kubernetes Deployments, Services, ConfigMaps, Secrets, PVCs, and Ingress
-- Helm packaging for reusable deployments
-- Clear separation between frontend, backend, database, and cache services

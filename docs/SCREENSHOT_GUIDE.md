@@ -1,210 +1,127 @@
-# Portfolio Screenshot Guide
+# Screenshot Guide
 
-Use real screenshots from your own machine/cloud account. Save images in the `screenshots/` folder and reference them from the README.
+Use real output from Jenkins, Docker, Kubernetes, and your registry account. Keep screenshots cropped and readable.
 
-## 1. Architecture Diagram
+## Architecture
 
-Open `docs/architecture.mmd` in one of these tools:
+Open `docs/architecture.mmd` in GitHub preview or https://mermaid.live and export the diagram.
 
-- GitHub README preview with a Mermaid code block
-- https://mermaid.live
-- diagrams.net, if you prefer a drag-and-drop diagram
-
-Export or screenshot the diagram as:
+Save as:
 
 ```text
 screenshots/architecture-diagram.png
 ```
 
-Suggested diagram flow:
+## Jenkins
+
+Create a Jenkins Pipeline job that points to this repository and uses the root `Jenkinsfile`.
+
+Capture the stage view after a successful run:
 
 ```text
-GitHub -> Jenkins -> SonarQube -> Docker -> Docker Hub/AWS ECR -> Kubernetes/EKS -> App Services
+Checkout -> Validate -> Build Images -> Test -> SonarQube -> Docker Evidence -> Push Images -> Deploy to Kubernetes -> Kubernetes Evidence
 ```
-
-## 2. Jenkins Pipeline Screenshot
-
-Add this repository to Jenkins as a Pipeline job and point it to the root `Jenkinsfile`.
-
-Minimum local screenshot:
-
-1. Run the pipeline with default parameters.
-2. Capture the Jenkins stage view showing:
-   - Checkout
-   - Build
-   - Test
-   - SonarQube Scan
-   - Docker Build
-   - Docker Evidence
-   - Push Images
-   - Registry Evidence
-   - Prepare Kubernetes Context
-   - Deploy to Kubernetes
-   - Kubernetes Evidence
 
 Save as:
 
 ```text
-screenshots/jenkins-pipeline-stages.png
+screenshots/jenkins-pipeline.png
 ```
 
-For a complete cloud deployment screenshot, configure:
+## Docker Evidence
 
-- Docker on the Jenkins agent
-- SonarQube server named `sonarqube`
-- Docker Hub credentials or AWS credentials
-- `kubectl` and `helm`
-- A Kubernetes cluster or EKS cluster
+Run the pipeline with the default parameters. Screenshot the `Docker Evidence` console output.
 
-Then rerun the pipeline with:
+The stage writes:
 
 ```text
-PUSH_IMAGES=true
-DEPLOY_TO_K8S=true
+pipeline-evidence/docker-images.txt
+pipeline-evidence/docker-compose-ps.txt
+pipeline-evidence/docker-containers.txt
+pipeline-evidence/backend-health.json
 ```
 
-The Jenkinsfile creates `pipeline-evidence/` files and archives them as build artifacts. You can screenshot the Jenkins stage view, the console output from `Docker Evidence`, and the console output from `Kubernetes Evidence`.
+Save the screenshot as:
 
-If Jenkins runs inside a Docker agent, the pipeline checks backend health from inside the Compose network instead of using `localhost`. This avoids screenshots failing because published Docker ports belong to the Docker host rather than the Jenkins container.
+```text
+screenshots/docker-evidence.png
+```
 
-## 3. Kubernetes Running Screenshot
+## Kubernetes Evidence
 
-To capture Kubernetes from Jenkins, run the pipeline with:
+Run the pipeline with:
 
 ```text
 DEPLOY_TO_K8S=true
+K8S_REPLICAS=1
 ```
 
-If you are deploying to EKS and Jenkins needs to configure kubeconfig, also set:
+For EKS, also set:
 
 ```text
 UPDATE_EKS_KUBECONFIG=true
+AWS_REGION=<region>
+EKS_CLUSTER_NAME=<cluster-name>
 ```
 
-For a small demo cluster, keep:
+Screenshot the `Kubernetes Evidence` console output.
 
-```text
-K8S_REPLICA_COUNT=1
-```
-
-This keeps the screenshot run lightweight and avoids rollouts getting stuck because the cluster cannot schedule multiple replicas.
-
-Screenshot the `Kubernetes Evidence` stage console output. It prints:
-
-```bash
-kubectl -n dockerized-microservices get pods -o wide
-kubectl -n dockerized-microservices get svc -o wide
-kubectl -n dockerized-microservices get ingress -o wide
-```
-
-The same output is archived in:
+The stage writes:
 
 ```text
 pipeline-evidence/kubernetes-pods.txt
 pipeline-evidence/kubernetes-services.txt
 pipeline-evidence/kubernetes-ingress.txt
 pipeline-evidence/kubernetes-events.txt
-pipeline-evidence/backend-deployment-describe.txt
-pipeline-evidence/frontend-deployment-describe.txt
+pipeline-evidence/backend-logs.txt
 ```
+
+Save the screenshot as:
+
+```text
+screenshots/kubernetes-evidence.png
+```
+
+## Registry
+
+Run the pipeline with:
+
+```text
+PUSH_IMAGES=true
+REGISTRY_TYPE=dockerhub
+REGISTRY_NAMESPACE=<dockerhub-user>
+```
+
+For ECR, use:
+
+```text
+PUSH_IMAGES=true
+REGISTRY_TYPE=ecr
+AWS_ACCOUNT_ID=<account-id>
+AWS_REGION=<region>
+```
+
+Open Docker Hub or AWS ECR and capture the pushed image tags.
 
 Save as:
 
 ```text
-screenshots/kubernetes-running.png
+screenshots/registry-images.png
 ```
 
-## 4. Docker Image Screenshot
+## GitHub
 
-To capture Docker evidence from Jenkins, screenshot the `Docker Evidence` stage console output. It prints:
+Push the repository, then capture the GitHub page showing:
 
-```bash
-docker images
-docker compose ps
-docker ps --filter "name=dmd-"
-```
-
-The same output is archived in:
-
-```text
-pipeline-evidence/docker-images.txt
-pipeline-evidence/docker-compose-ps.txt
-pipeline-evidence/docker-running-containers.txt
-```
-
-### Docker Hub
-
-Replace `<username>` with your Docker Hub username:
-
-```bash
-docker login
-docker tag dockerized-microservices-backend:latest <username>/dockerized-microservices-backend:v1
-docker tag dockerized-microservices-frontend:latest <username>/dockerized-microservices-frontend:v1
-docker push <username>/dockerized-microservices-backend:v1
-docker push <username>/dockerized-microservices-frontend:v1
-```
-
-Open Docker Hub and screenshot the repository tag page.
+- `backend/`
+- `frontend/`
+- `k8s/`
+- `helm/`
+- `Jenkinsfile`
+- rendered `README.md`
 
 Save as:
 
 ```text
-screenshots/dockerhub-images.png
+screenshots/github-repo.png
 ```
-
-### AWS ECR
-
-Replace the placeholders:
-
-```bash
-aws ecr create-repository --repository-name dockerized-microservices-backend --region us-east-1
-aws ecr create-repository --repository-name dockerized-microservices-frontend --region us-east-1
-
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-
-docker tag dockerized-microservices-backend:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/dockerized-microservices-backend:v1
-docker tag dockerized-microservices-frontend:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/dockerized-microservices-frontend:v1
-
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/dockerized-microservices-backend:v1
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/dockerized-microservices-frontend:v1
-```
-
-Open AWS Console -> ECR -> Repositories and screenshot the image tag list.
-
-Save as:
-
-```text
-screenshots/ecr-images.png
-```
-
-## 5. README and GitHub Repo Screenshot
-
-Push the project:
-
-```bash
-git init
-git add .
-git commit -m "Add Dockerized Microservices Deployment portfolio project"
-git branch -M main
-git remote add origin https://github.com/<your-username>/dockerized-microservices-deployment.git
-git push -u origin main
-```
-
-Open the GitHub repository in your browser and capture:
-
-- Folder structure
-- Rendered README
-- `backend/`, `frontend/`, `k8s/`, `helm/`, and `Jenkinsfile`
-
-Save as:
-
-```text
-screenshots/github-repository.png
-```
-
-## Screenshot Tips
-
-- On Windows, press `Win + Shift + S` to capture a selected area.
-- Use Windows Terminal with a larger font for readable command screenshots.
-- Crop screenshots to the important area only.
-- Do not screenshot secrets, tokens, AWS account details, or passwords.

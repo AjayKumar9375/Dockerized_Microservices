@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    description="Demo FastAPI backend for a Docker, Compose, Kubernetes, and Helm portfolio project.",
+    description="FastAPI service for the microservices deployment demo.",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -124,7 +124,7 @@ async def service_info() -> dict[str, Any]:
     return {
         "service": settings.app_name,
         "environment": settings.environment,
-        "message": "FastAPI is running inside a containerized microservices stack.",
+        "message": "API is reachable.",
     }
 
 
@@ -227,5 +227,5 @@ async def cache_counter(request: Request) -> dict[str, Any]:
     return {
         "cache": "redis",
         "hits": hits,
-        "message": "Redis incremented this counter.",
+        "message": "Counter updated.",
     }
